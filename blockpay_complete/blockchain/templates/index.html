@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BlockPay — Blockchain Digital Payment System</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#08090d;--surface:#0e1018;--surface2:#141720;--surface3:#1a1e28;
+  --border:#1e2230;--border2:#262c3a;--border3:#2e3545;
+  --text:#e6e9f4;--text2:#9aa0b8;--text3:#5c6278;
+  --accent:#5b9cf6;--accent-bg:#0d1e36;--accent-border:#1a3358;
+  --green:#28d98a;--green-bg:#091f14;--green-border:#0d3320;
+  --amber:#f5a623;--amber-bg:#1f1508;--amber-border:#3a2510;
+  --red:#ff5757;--red-bg:#1f0808;--red-border:#3a1010;
+  --purple:#a78bfa;--purple-bg:#150f2a;
+  --font:'Space Grotesk',system-ui,sans-serif;
+  --mono:'JetBrains Mono',monospace;
+  --r:8px;--r-sm:5px;--r-lg:12px;
+  --sidebar:230px;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.55}
+
+/* ── LAYOUT ── */
+.app{display:flex;min-height:100vh}
+.sidebar{
+  width:var(--sidebar);flex-shrink:0;position:fixed;top:0;left:0;height:100vh;
+  background:var(--surface);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;z-index:100;
+}
+.main{margin-left:var(--sidebar);flex:1;min-height:100vh;display:flex;flex-direction:column}
+
+/* ── SIDEBAR ── */
+.sb-logo{
+  display:flex;align-items:center;gap:11px;
+  padding:20px 18px 18px;border-bottom:1px solid var(--border);
+}
+.sb-logo-icon{
+  width:36px;height:36px;border-radius:9px;flex-shrink:0;
+  background:linear-gradient(135deg,#0d1e36,#1a3358);
+  border:1px solid var(--accent-border);
+  display:flex;align-items:center;justify-content:center;font-size:17px;
+}
+.sb-logo-name{font-size:16px;font-weight:700;letter-spacing:-.4px}
+.sb-logo-sub{font-size:10px;color:var(--text3);letter-spacing:.8px;text-transform:uppercase}
+
+.sb-nav{padding:10px 10px;flex:1;overflow-y:auto}
+.nav-section-label{font-size:10px;color:var(--text3);font-weight:600;letter-spacing:.8px;text-transform:uppercase;padding:10px 8px 4px}
+.nav-btn{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 10px;border-radius:var(--r-sm);
+  cursor:pointer;color:var(--text2);font-size:13.5px;font-weight:500;
+  transition:all .15s;border:none;background:none;width:100%;text-align:left;
+  font-family:var(--font);margin-bottom:1px;
+}
+.nav-btn:hover{background:var(--surface2);color:var(--text)}
+.nav-btn.active{background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent-border)}
+.nav-icon{font-size:15px;width:20px;text-align:center;flex-shrink:0}
+.nav-badge{
+  margin-left:auto;font-size:10px;padding:2px 7px;border-radius:10px;
+  font-weight:600;
+}
+.nb-amber{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
+.nb-green{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+
+.sb-footer{
+  padding:12px 14px;border-top:1px solid var(--border);
+  font-size:11px;color:var(--text3);line-height:1.8;
+}
+.online-dot{
+  display:inline-block;width:6px;height:6px;border-radius:50%;
+  background:var(--green);box-shadow:0 0 6px var(--green);
+  margin-right:5px;vertical-align:middle;
+}
+
+/* ── TOPBAR ── */
+.topbar{
+  padding:22px 30px 0;
+  display:flex;align-items:flex-start;justify-content:space-between;
+  margin-bottom:22px;
+}
+.page-title{font-size:20px;font-weight:700;letter-spacing:-.5px;margin-bottom:3px}
+.page-sub{font-size:13px;color:var(--text2)}
+.chip-row{display:flex;gap:7px;flex-wrap:wrap}
+.chip{
+  font-size:11px;padding:4px 10px;border-radius:20px;font-weight:600;
+  display:flex;align-items:center;gap:5px;
+}
+.chip-blue{background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent-border)}
+.chip-green{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.chip-amber{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
+
+/* ── PAGE BODY ── */
+.page-body{padding:0 30px 30px;flex:1}
+
+/* ── CARDS ── */
+.grid{display:grid;gap:12px}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 20px}
+.card-sm{padding:14px 16px}
+.card-label{font-size:11px;color:var(--text2);font-weight:600;letter-spacing:.4px;text-transform:uppercase;margin-bottom:6px}
+.card-value{font-size:24px;font-weight:700;letter-spacing:-.5px;line-height:1.1}
+.card-sub{font-size:12px;color:var(--text3);margin-top:4px}
+.card-icon{font-size:22px;margin-bottom:10px}
+
+/* wallet cards */
+.wallet-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;position:relative;overflow:hidden}
+.wallet-card::before{
+  content:'';position:absolute;top:-30px;right:-30px;
+  width:80px;height:80px;border-radius:50%;opacity:.08;
+}
+.wc-alice::before{background:var(--accent)}
+.wc-bob::before{background:var(--green)}
+.wc-charlie::before{background:var(--amber)}
+.wallet-av{
+  width:36px;height:36px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700;margin-bottom:12px;
+}
+.av-a{background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent-border)}
+.av-b{background:var(--green-bg);color:var(--green);border:1px solid var(--green-border)}
+.av-c{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border)}
+.wallet-name{font-size:12px;color:var(--text2);font-weight:600;letter-spacing:.3px;text-transform:uppercase;margin-bottom:4px}
+.wallet-bal{font-size:26px;font-weight:700;letter-spacing:-.5px}
+.wallet-unit{font-size:12px;color:var(--text3);margin-top:3px;font-family:var(--mono)}
+
+/* ── SECTION ── */
+.section{margin-top:20px}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.section-title{font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.8px;text-transform:uppercase}
+
+/* ── TX ROWS ── */
+.tx-list{display:flex;flex-direction:column;gap:7px}
+.tx-row{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r);padding:11px 14px;
+  display:flex;align-items:center;gap:10px;font-size:13px;
+}
+.tx-row.pending{background:var(--amber-bg);border-color:var(--amber-border)}
+.tx-row.confirmed{background:var(--green-bg);border-color:var(--green-border)}
+.tx-name{font-weight:600;font-size:13px}
+.tx-arrow{color:var(--text3);font-size:11px}
+.tx-amt{margin-left:auto;font-weight:700;font-family:var(--mono);font-size:12px}
+.tx-fee{font-size:10px;color:var(--text3);font-family:var(--mono)}
+.tx-id{font-size:10px;color:var(--text3);font-family:var(--mono)}
+.tx-status{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600}
+.ts-pending{background:var(--amber-bg);color:var(--amber)}
+.ts-conf{background:var(--green-bg);color:var(--green)}
+
+/* ── EMPTY STATE ── */
+.empty{
+  background:var(--surface);border:1px dashed var(--border2);
+  border-radius:var(--r-lg);padding:36px 20px;
+  text-align:center;color:var(--text2);font-size:13px;
+}
+.empty-icon{font-size:30px;margin-bottom:9px;opacity:.5}
+
+/* ── FORM ── */
+.form-row{display:grid;gap:14px}
+.form-2{grid-template-columns:1fr 1fr}
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-label{font-size:12px;color:var(--text2);font-weight:600;letter-spacing:.3px}
+.form-input,.form-select{
+  background:var(--surface2);border:1px solid var(--border2);
+  border-radius:var(--r);padding:10px 13px;
+  color:var(--text);font-size:13.5px;font-family:var(--font);
+  outline:none;transition:border-color .15s;
+  -webkit-appearance:none;appearance:none;
+}
+.form-input:focus,.form-select:focus{border-color:var(--accent);background:var(--surface3)}
+.form-select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath fill='%235c6278' d='M0 0l6 8 6-8z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+.form-select option{background:var(--surface2)}
+.form-hint{font-size:11px;color:var(--text3)}
+.form-hint.warn{color:var(--amber)}
+.form-hint.ok{color:var(--green)}
+.form-divider{border:none;border-top:1px solid var(--border);margin:6px 0}
+
+/* ── BUTTONS ── */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:11px 20px;border-radius:var(--r);
+  font-size:14px;font-weight:600;font-family:var(--font);
+  cursor:pointer;border:none;transition:all .15s;white-space:nowrap;
+}
+.btn-full{width:100%;padding:12px}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover:not(:disabled){background:#74aef8}
+.btn-mine{
+  background:linear-gradient(135deg,var(--green-bg),#0d2a1c);
+  border:1px solid var(--green-border);color:var(--green);
+  font-size:15px;padding:14px;
+}
+.btn-mine:hover:not(:disabled){background:linear-gradient(135deg,#0d2a1c,#143d25)}
+.btn:disabled{background:var(--surface3);border:1px solid var(--border2);color:var(--text3);cursor:not-allowed}
+
+/* ── MINING PROGRESS ── */
+.mine-progress{
+  display:none;background:var(--accent-bg);border:1px solid var(--accent-border);
+  border-radius:var(--r);padding:14px 16px;margin-bottom:14px;
+  font-size:12px;color:var(--accent);font-family:var(--mono);line-height:2;
+}
+.mine-progress.show{display:block}
+.spinner{display:inline-block;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── CHAIN EXPLORER BLOCKS ── */
+.block-wrap{margin-bottom:4px}
+.block-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r-lg);overflow:hidden;
+}
+.block-card.expanded{border-color:var(--accent-border)}
+.block-head{
+  display:flex;align-items:center;gap:12px;padding:13px 16px;
+  cursor:pointer;transition:background .15s;
+}
+.block-head:hover{background:var(--surface2)}
+.block-num{
+  width:36px;height:36px;border-radius:var(--r);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;flex-shrink:0;font-family:var(--mono);
+}
+.bn-genesis{background:var(--surface3);color:var(--text3);border:1px solid var(--border2)}
+.bn-normal{background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent-border)}
+.block-head-info{flex:1;min-width:0}
+.block-head-title{font-size:13px;font-weight:600;margin-bottom:2px}
+.block-head-hash{font-family:var(--mono);font-size:10px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.block-head-meta{text-align:right;flex-shrink:0;margin-right:10px}
+.block-head-meta div{font-size:11px;color:var(--text3)}
+.block-chevron{color:var(--text3);font-size:13px;flex-shrink:0}
+.block-body{
+  display:none;padding:0 16px 16px;
+  border-top:1px solid var(--border);
+}
+.block-body.open{display:block}
+.block-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px 0}
+.bm-label{font-size:10px;color:var(--text3);font-weight:600;letter-spacing:.4px;text-transform:uppercase;margin-bottom:3px}
+.bm-val{font-size:12.5px;font-weight:600}
+.hash-box{
+  font-family:var(--mono);font-size:10px;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--r);padding:9px 12px;
+  word-break:break-all;line-height:1.8;
+  margin-bottom:8px;
+}
+.hash-box.valid{color:var(--green);border-color:var(--green-border);background:var(--green-bg)}
+.chain-connector{text-align:center;padding:2px 0;color:var(--border3);font-size:18px;line-height:1}
+
+/* ── VALIDATE ── */
+.validate-result{
+  border-radius:var(--r-lg);padding:28px 24px;text-align:center;
+  margin-top:16px;
+}
+.vr-valid{background:var(--green-bg);border:1px solid var(--green-border)}
+.vr-invalid{background:var(--red-bg);border:1px solid var(--red-border)}
+.vr-icon{font-size:42px;margin-bottom:12px}
+.vr-title{font-size:18px;font-weight:700;margin-bottom:6px}
+.vr-sub{font-size:13px;color:var(--text2)}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;top:18px;right:18px;z-index:9999;
+  background:var(--surface2);border:1px solid var(--border2);
+  border-radius:var(--r-lg);padding:12px 16px;
+  display:flex;align-items:center;gap:10px;
+  font-size:13px;font-weight:500;
+  box-shadow:0 12px 40px rgba(0,0,0,.6);
+  max-width:320px;
+  transform:translateX(110%);transition:transform .25s cubic-bezier(.16,1,.3,1);
+}
+.toast.show{transform:translateX(0)}
+.toast.success{border-color:var(--green-border);background:var(--green-bg);color:var(--green)}
+.toast.error{border-color:var(--red-border);background:var(--red-bg);color:var(--red)}
+.toast.info{border-color:var(--accent-border);background:var(--accent-bg);color:var(--accent)}
+
+/* ── CONCEPT CARDS ── */
+.concept-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px 18px}
+.concept-icon{font-size:22px;margin-bottom:9px}
+.concept-title{font-size:13px;font-weight:700;margin-bottom:5px}
+.concept-desc{font-size:12px;color:var(--text2);line-height:1.6}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border3);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-icon">⬡</div>
+      <div>
+        <div class="sb-logo-name">BlockPay</div>
+        <div class="sb-logo-sub">Blockchain Payments</div>
+      </div>
+    </div>
+    <nav class="sb-nav">
+      <div class="nav-section-label">Overview</div>
+      <button class="nav-btn" id="nav-dashboard" onclick="goto('dashboard')">
+        <span class="nav-icon">◈</span> Dashboard
+      </button>
+      <button class="nav-btn" id="nav-wallets" onclick="goto('wallets')">
+        <span class="nav-icon">◉</span> Wallets
+      </button>
+      <div class="nav-section-label">Transactions</div>
+      <button class="nav-btn" id="nav-send" onclick="goto('send')">
+        <span class="nav-icon">→</span> Send Payment
+      </button>
+      <button class="nav-btn" id="nav-pending" onclick="goto('pending')">
+        <span class="nav-icon">⏳</span> Pending Pool
+        <span class="nav-badge nb-amber" id="pending-badge" style="display:none">0</span>
+      </button>
+      <div class="nav-section-label">Blockchain</div>
+      <button class="nav-btn" id="nav-mine" onclick="goto('mine')">
+        <span class="nav-icon">⛏</span> Mine Block
+      </button>
+      <button class="nav-btn" id="nav-explorer" onclick="goto('explorer')">
+        <span class="nav-icon">⛓</span> Chain Explorer
+      </button>
+      <button class="nav-btn" id="nav-validate" onclick="goto('validate')">
+        <span class="nav-icon">✓</span> Validate Chain
+      </button>
+    </nav>
+    <div class="sb-footer">
+      <div><span class="online-dot"></span>API: localhost:8000</div>
+      <div id="sb-diff">Difficulty: 2 zeros</div>
+      <div id="sb-reward">Reward: 10 BP / block</div>
+      <div id="sb-blocks" style="color:var(--accent)">Chain: loading…</div>
+    </div>
+  </aside>
+
+  <!-- ── MAIN ── -->
+  <div class="main" id="main">
+    <div style="padding:40px;text-align:center;color:var(--text2)">
+      <div style="font-size:28px;margin-bottom:8px">⬡</div>
+      Loading blockchain…
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <span id="toast-icon"></span>
+  <span id="toast-msg"></span>
+</div>
+
+<script>
+// ── STATE ───────────────────────────────────────────────────────────────────────
+const API = 'http://127.0.0.1:8000';
+let D = { chain:[], wallets:{}, pending_transactions:[], difficulty:2, mining_reward:10, length:0 };
+let tab = 'dashboard';
+let isMining = false;
+let toastTimer = null;
+
+// ── HELPERS ─────────────────────────────────────────────────────────────────────
+async function req(path, method='GET', body=null){
+  const opts = {method, headers:{'Content-Type':'application/json'}};
+  if(body) opts.body = JSON.stringify(body);
+  const r = await fetch(API + path, opts);
+  return r.json();
+}
+
+async function refresh(){
+  try {
+    D = await req('/api/chain/');
+    // update sidebar badges
+    const pb = D.pending_transactions.length;
+    const badge = document.getElementById('pending-badge');
+    badge.style.display = pb > 0 ? 'inline-flex' : 'none';
+    badge.textContent = pb;
+    document.getElementById('sb-diff').textContent  = `Difficulty: ${D.difficulty} zeros`;
+    document.getElementById('sb-reward').textContent = `Reward: ${D.mining_reward} BP / block`;
+    document.getElementById('sb-blocks').textContent = `Chain: ${D.length} blocks`;
+  } catch(e){ toast('error','Cannot reach Django server at :8000'); }
+}
+
+function toast(type, msg, dur=3500){
+  clearTimeout(toastTimer);
+  const el = document.getElementById('toast');
+  document.getElementById('toast-icon').textContent = type==='success'?'✓':type==='error'?'✗':'ℹ';
+  document.getElementById('toast-msg').textContent = msg;
+  el.className = `toast ${type} show`;
+  toastTimer = setTimeout(()=>{ el.className='toast'; }, dur);
+}
+
+function avClass(name){ return name==='Alice'?'av-a':name==='Bob'?'av-b':'av-c'; }
+function wcClass(name){ return name==='Alice'?'wc-alice':name==='Bob'?'wc-bob':'wc-charlie'; }
+function walletOption(name, balance){
+  return `<option value="${name}">${name} — ${(balance||0).toFixed(2)} BP</option>`;
+}
+function bp(n){ return `<span style="font-family:var(--mono);font-size:11px;color:var(--text3)">BP</span>`; }
+function shortHash(h){ return h.slice(0,10)+'…'+h.slice(-8); }
+function tsToTime(ts){ return new Date(ts*1000).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
+function tsToFull(ts){ return new Date(ts*1000).toLocaleString(); }
+
+// ── NAV ─────────────────────────────────────────────────────────────────────────
+async function goto(t){
+  tab = t;
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  const btn = document.getElementById('nav-'+t);
+  if(btn) btn.classList.add('active');
+  await refresh();
+  render();
+}
+
+// ── RENDER ───────────────────────────────────────────────────────────────────────
+function render(){
+  const main = document.getElementById('main');
+  if(tab==='dashboard')   main.innerHTML = renderDashboard();
+  if(tab==='wallets')     main.innerHTML = renderWallets();
+  if(tab==='send')        { main.innerHTML = renderSend(); bindSend(); }
+  if(tab==='pending')     main.innerHTML = renderPending();
+  if(tab==='mine')        { main.innerHTML = renderMine(); }
+  if(tab==='explorer')    main.innerHTML = renderExplorer();
+  if(tab==='validate')    main.innerHTML = renderValidate();
+}
+
+// ── DASHBOARD ───────────────────────────────────────────────────────────────────
+function renderDashboard(){
+  const wallets = D.wallets||{};
+  const pending = D.pending_transactions||[];
+  const names = Object.keys(wallets);
+  const totalBP = Object.values(wallets).reduce((a,b)=>a+b,0).toFixed(2);
+
+  const walletCards = names.map(n=>`
+    <div class="wallet-card ${wcClass(n)}">
+      <div class="wallet-av ${avClass(n)}">${n[0]}</div>
+      <div class="wallet-name">${n}</div>
+      <div class="wallet-bal">${(wallets[n]||0).toFixed(2)}</div>
+      <div class="wallet-unit">BlockPay coins</div>
+    </div>`).join('');
+
+  const recentTxs = (D.chain||[]).slice().reverse().slice(0,3)
+    .flatMap(b=>b.transactions||[]).slice(0,5);
+
+  const recentHtml = recentTxs.length === 0
+    ? `<div class="empty"><div class="empty-icon">📭</div>No transactions yet — send your first payment!</div>`
+    : recentTxs.map(tx=>`
+      <div class="tx-row confirmed">
+        <div class="wallet-av ${avClass(tx.sender)}" style="width:26px;height:26px;font-size:10px">${tx.sender[0]}</div>
+        <span class="tx-name">${tx.sender}</span>
+        <span class="tx-arrow">──▶</span>
+        <span class="tx-name">${tx.recipient}</span>
+        <span class="tx-amt" style="color:var(--green)">+${tx.amount} BP</span>
+        <span class="tx-status ts-conf">Confirmed</span>
+      </div>`).join('');
+
+  return `
+    <div class="topbar">
+      <div>
+        <div class="page-title">Dashboard</div>
+        <div class="page-sub">Blockchain overview &amp; wallet balances</div>
+      </div>
+      <div class="chip-row">
+        <span class="chip chip-blue">⛓ ${D.length} blocks</span>
+        <span class="chip ${pending.length>0?'chip-amber':'chip-green'}">${pending.length} pending</span>
+        <span class="chip chip-blue">💎 ${totalBP} BP in circulation</span>
+      </div>
+    </div>
+    <div class="page-body">
+      <div class="grid g3">${walletCards}</div>
+
+      <div class="grid g4" style="margin-top:12px">
+        <div class="card card-sm">
+          <div class="card-icon">⛓</div>
+          <div class="card-label">Chain length</div>
+          <div class="card-value">${D.length}</div>
+          <div class="card-sub">blocks mined</div>
+        </div>
+        <div class="card card-sm">
+          <div class="card-icon">⏳</div>
+          <div class="card-label">Pending</div>
+          <div class="card-value" style="color:${pending.length>0?'var(--amber)':'var(--text)'}">${pending.length}</div>
+          <div class="card-sub">unconfirmed txs</div>
+        </div>
+        <div class="card card-sm">
+          <div class="card-icon">🔒</div>
+          <div class="card-label">Difficulty</div>
+          <div class="card-value">${D.difficulty}</div>
+          <div class="card-sub">leading zeros</div>
+        </div>
+        <div class="card card-sm">
+          <div class="card-icon">💎</div>
+          <div class="card-label">Block reward</div>
+          <div class="card-value">${D.mining_reward}</div>
+          <div class="card-sub">BP per block</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">Recent confirmed transactions</div>
+          <button class="btn" style="padding:5px 12px;font-size:12px;background:var(--surface2);border:1px solid var(--border2);color:var(--text2)" onclick="goto('explorer')">View all blocks →</button>
+        </div>
+        <div class="tx-list">${recentHtml}</div>
+      </div>
+
+      ${pending.length>0?`
+      <div class="section">
+        <div class="section-header">
+          <div class="section-title">⚠ Pending transactions (${pending.length})</div>
+        </div>
+        <div class="tx-list">
+          ${pending.map(tx=>`
+            <div class="tx-row pending">
+              <span>⏳</span>
+              <span class="tx-name">${tx.sender}</span>
+              <span class="tx-arrow">──▶</span>
+              <span class="tx-name">${tx.recipient}</span>
+              <span class="tx-amt" style="color:var(--amber)">${tx.amount} BP</span>
+              <span class="tx-fee">fee: ${tx.fee} BP</span>
+              <span class="tx-status ts-pending">Pending</span>
+            </div>`).join('')}
+        </div>
+        <button class="btn btn-mine btn-full" onclick="goto('mine')" style="margin-top:10px">⛏ Mine block to confirm these →</button>
+      </div>`:''}
+
+      <div class="section">
+        <div class="section-title">How blockchain payments work</div>
+        <div class="grid g3" style="margin-top:10px">
+          <div class="concept-card"><div class="concept-icon">→</div><div class="concept-title">1. Send</div><div class="concept-desc">Create a transaction. Deducted from sender, placed in pending pool. Not on chain yet.</div></div>
+          <div class="concept-card"><div class="concept-icon">⛏</div><div class="concept-title">2. Mine</div><div class="concept-desc">Find SHA-256 hash with ${D.difficulty} leading zeros (proof-of-work). Bundles pending txs into a block.</div></div>
+          <div class="concept-card"><div class="concept-icon">⛓</div><div class="concept-title">3. Chain</div><div class="concept-desc">Block is added. Each block stores previous hash — altering any block breaks all subsequent hashes.</div></div>
+        </div>
+      </div>
+    </div>`;
+}
+
+// ── WALLETS ──────────────────────────────────────────────────────────────────────
+function renderWallets(){
+  const wallets = D.wallets||{};
+  const names = Object.keys(wallets);
+  const walletCards = names.map(n=>`
+    <div class="wallet-card ${wcClass(n)}" style="position:relative">
+      <div class="wallet-av ${avClass(n)}">${n[0]}</div>
+      <div class="wallet-name">${n}</div>
+      <div class="wallet-bal">${(wallets[n]||0).toFixed(2)}</div>
+      <div class="wallet-unit">BlockPay coins</div>
+      <div style="margin-top:14px;display:flex;gap:8px">
+        <button class="btn" style="flex:1;padding:7px;font-size:12px;background:var(--surface2);border:1px solid var(--border2);color:var(--text2)"
+          onclick="goto('send')">→ Send</button>
+      </div>
+    </div>`).join('');
+
+  const allTxs = (D.chain||[]).flatMap(b=>b.transactions||[]);
+  const history = names.map(n=>{
+    const sent = allTxs.filter(t=>t.sender===n&&t.sender!=='COINBASE');
+    const recv = allTxs.filter(t=>t.recipient===n);
+    const totalSent = sent.reduce((a,t)=>a+t.amount,0);
+    const totalRecv = recv.filter(t=>t.sender!=='COINBASE').reduce((a,t)=>a+t.amount,0);
+    return `
+      <div class="card card-sm" style="display:flex;align-items:center;gap:14px">
+        <div class="wallet-av ${avClass(n)}" style="margin:0;flex-shrink:0">${n[0]}</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700">${n}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">${sent.length} sent · ${recv.length} received</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:12px;color:var(--red);font-family:var(--mono)">−${totalSent.toFixed(2)} BP sent</div>
+          <div style="font-size:12px;color:var(--green);font-family:var(--mono)">+${totalRecv.toFixed(2)} BP received</div>
+        </div>
+        <div style="font-size:20px;font-weight:700;font-family:var(--mono);min-width:80px;text-align:right">
+          ${(wallets[n]||0).toFixed(2)}<span style="font-size:11px;color:var(--text3);font-weight:400"> BP</span>
+        </div>
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="topbar">
+      <div><div class="page-title">Wallets</div><div class="page-sub">Balances &amp; transaction history per address</div></div>
+    </div>
+    <div class="page-body">
+      <div class="grid g3">${walletCards}</div>
+      <div class="section">
+        <div class="section-title">Balance summary</div>
+        <div class="grid" style="margin-top:10px">${history}</div>
+      </div>
+    </div>`;
+}
+
+// ── SEND ─────────────────────────────────────────────────────────────────────────
+function renderSend(){
+  const wallets = D.wallets||{};
+  const names = Object.keys(wallets);
+  const fromOpts = names.map(n=>walletOption(n, wallets[n])).join('');
+  const toOpts   = names.filter(n=>n!==names[0]).map(n=>walletOption(n, wallets[n])).join('');
+
+  return `
+    <div class="topbar">
+      <div><div class="page-title">Send Payment</div><div class="page-sub">Transfer BP coins — transaction queued in pending pool until mined</div></div>
+    </div>
+    <div class="page-body">
+      <div style="max-width:480px">
+        <div class="card">
+          <div class="form-row form-2" style="margin-bottom:14px">
+            <div class="form-group">
+              <label class="form-label">From</label>
+              <select class="form-select" id="from-sel">${fromOpts}</select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">To</label>
+              <select class="form-select" id="to-sel">${toOpts}</select>
+            </div>
+          </div>
+          <div class="form-group" id="new-recipient-wrap" style="display:none;margin-bottom:14px">
+            <label class="form-label">New wallet name</label>
+            <input class="form-input" id="recipient-inp" type="text" maxlength="40" placeholder="Enter a name">
+            <div class="form-hint">The wallet will appear after this payment is mined.</div>
+          </div>
+          <div class="form-group" style="margin-bottom:14px">
+            <label class="form-label">Amount (BP)</label>
+            <input class="form-input" id="amount-inp" type="number" min="0.1" step="0.1" placeholder="0.00">
+            <div class="form-hint" id="send-hint" style="margin-top:5px"></div>
+          </div>
+          <hr class="form-divider">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0 14px;font-size:12px;color:var(--text2)">
+            <div>Network fee: <strong style="color:var(--text)">0.5 BP</strong></div>
+            <div>Mined within: <strong style="color:var(--text)">next block</strong></div>
+          </div>
+          <button class="btn btn-primary btn-full" id="send-btn" onclick="doSend()">→ Send Payment</button>
+        </div>
+
+        <div class="section" style="margin-top:18px">
+          <div class="section-title">What happens next?</div>
+          <div class="grid" style="margin-top:8px;gap:8px">
+            <div class="card card-sm" style="display:flex;gap:12px;align-items:flex-start">
+              <div style="width:24px;height:24px;border-radius:50%;background:var(--amber-bg);border:1px solid var(--amber-border);color:var(--amber);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">1</div>
+              <div><div style="font-size:12px;font-weight:600">Amount deducted immediately</div><div style="font-size:11px;color:var(--text3);margin-top:2px">Balance frozen from sender's wallet</div></div>
+            </div>
+            <div class="card card-sm" style="display:flex;gap:12px;align-items:flex-start">
+              <div style="width:24px;height:24px;border-radius:50%;background:var(--amber-bg);border:1px solid var(--amber-border);color:var(--amber);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">2</div>
+              <div><div style="font-size:12px;font-weight:600">Held in pending pool</div><div style="font-size:11px;color:var(--text3);margin-top:2px">Waiting for a miner to include it in a block</div></div>
+            </div>
+            <div class="card card-sm" style="display:flex;gap:12px;align-items:flex-start">
+              <div style="width:24px;height:24px;border-radius:50%;background:var(--green-bg);border:1px solid var(--green-border);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">3</div>
+              <div><div style="font-size:12px;font-weight:600">Confirmed on-chain</div><div style="font-size:11px;color:var(--text3);margin-top:2px">Recipient receives funds after block is mined</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function bindSend(){
+  const fromSel = document.getElementById('from-sel');
+  const toSel   = document.getElementById('to-sel');
+  const amtInp  = document.getElementById('amount-inp');
+  const recipientInp = document.getElementById('recipient-inp');
+  const newRecipientWrap = document.getElementById('new-recipient-wrap');
+  if(!fromSel) return;
+
+  function rebuildTo(){
+    const from = fromSel.value;
+    const wallets = D.wallets||{};
+    const opts = Object.keys(wallets).filter(n=>n!==from)
+      .map(n=>walletOption(n, wallets[n])).join('');
+    toSel.innerHTML = opts + '<option value="__new__">New wallet...</option>';
+    if(!opts) toSel.value = '__new__';
+    toggleNewRecipient();
+    updateHint();
+  }
+
+  function toggleNewRecipient(){
+    const isNew = toSel.value === '__new__';
+    if(newRecipientWrap) newRecipientWrap.style.display = isNew ? 'flex' : 'none';
+    if(isNew && recipientInp) recipientInp.focus();
+  }
+
+  function updateHint(){
+    const hint = document.getElementById('send-hint');
+    if(!hint) return;
+    const amt = parseFloat(amtInp.value||0);
+    if(amt>0){
+      const total = (amt+0.5).toFixed(2);
+      const bal = D.wallets[fromSel.value]||0;
+      const ok = bal >= parseFloat(total);
+      hint.className = 'form-hint '+(ok?'ok':'warn');
+      hint.textContent = ok
+        ? `Total: ${total} BP (${amt} + 0.5 fee) — Balance after: ${(bal-parseFloat(total)).toFixed(2)} BP`
+        : `Need ${total} BP — only have ${bal.toFixed(2)} BP`;
+    } else { hint.textContent=''; }
+  }
+
+  fromSel.addEventListener('change', rebuildTo);
+  toSel.addEventListener('change', toggleNewRecipient);
+  amtInp.addEventListener('input', updateHint);
+  rebuildTo();
+}
+
+async function doSend(){
+  const sender    = document.getElementById('from-sel').value;
+  const toSel     = document.getElementById('to-sel');
+  const newName   = document.getElementById('recipient-inp')?.value.trim();
+  const recipient = toSel.value === '__new__' ? newName : toSel.value;
+  const amount    = parseFloat(document.getElementById('amount-inp').value);
+  if(!recipient) return toast('error','Enter a recipient name');
+  if(sender === recipient) return toast('error','Sender and recipient must differ');
+  if(!amount||amount<=0) return toast('error','Enter a valid amount');
+  const btn = document.getElementById('send-btn');
+  btn.disabled=true; btn.textContent='Sending…';
+  try {
+    const r = await req('/api/transactions/','POST',{sender,recipient,amount});
+    if(r.success){
+      toast('success',`${amount} BP queued: ${sender} → ${recipient}`);
+      goto('pending');
+    } else { toast('error', r.error||'Transaction failed'); }
+  } catch(e){ toast('error','API error'); }
+  btn.disabled=false; btn.textContent='→ Send Payment';
+}
+
+// ── PENDING ───────────────────────────────────────────────────────────────────────
+function renderPending(){
+  const pending = D.pending_transactions||[];
+  const rows = pending.length===0
+    ? `<div class="empty"><div class="empty-icon">📭</div>No pending transactions<br><small style="color:var(--text3)">Go to Send Payment to create one</small></div>`
+    : pending.map(tx=>`
+        <div class="tx-row pending">
+          <div class="wallet-av ${avClass(tx.sender)}" style="width:26px;height:26px;font-size:10px">${tx.sender[0]}</div>
+          <span class="tx-name">${tx.sender}</span>
+          <span class="tx-arrow">──▶</span>
+          <div class="wallet-av ${avClass(tx.recipient)}" style="width:26px;height:26px;font-size:10px">${tx.recipient[0]}</div>
+          <span class="tx-name">${tx.recipient}</span>
+          <span class="tx-id">${tx.tx_id}</span>
+          <span class="tx-amt" style="color:var(--amber)">${tx.amount} BP</span>
+          <span class="tx-fee">+${tx.fee} fee</span>
+          <span class="tx-status ts-pending">Unconfirmed</span>
+        </div>`).join('');
+
+  return `
+    <div class="topbar">
+      <div><div class="page-title">Pending Pool</div><div class="page-sub">Transactions waiting to be confirmed in the next block</div></div>
+      <div class="chip-row"><span class="chip chip-amber">${pending.length} unconfirmed</span></div>
+    </div>
+    <div class="page-body">
+      <div class="tx-list">${rows}</div>
+      ${pending.length>0?`<button class="btn btn-mine btn-full" onclick="goto('mine')" style="margin-top:14px">⛏ Mine block to confirm all →</button>`:''}
+    </div>`;
+}
+
+// ── MINE ──────────────────────────────────────────────────────────────────────────
+function renderMine(){
+  const pending = D.pending_transactions||[];
+  const wallets = D.wallets||{};
+  const minerOpts = Object.keys(wallets).map(n=>`<option value="${n}">${n}</option>`).join('');
+
+  const pendingRows = pending.length===0
+    ? `<div class="empty"><div class="empty-icon">📭</div>No transactions to mine<br><small>Go to Send Payment first</small></div>`
+    : pending.map(tx=>`
+        <div class="tx-row" style="margin-bottom:6px">
+          <span class="tx-name">${tx.sender}</span>
+          <span class="tx-arrow">──▶</span>
+          <span class="tx-name">${tx.recipient}</span>
+          <span class="tx-amt">${tx.amount} BP</span>
+          <span class="tx-fee">fee: ${tx.fee} BP</span>
+        </div>`).join('');
+
+  return `
+    <div class="topbar">
+      <div><div class="page-title">Mine Block</div><div class="page-sub">Proof-of-work: find SHA-256 hash with ${D.difficulty} leading zeros</div></div>
+    </div>
+    <div class="page-body">
+      <div class="grid g3" style="margin-bottom:20px">
+        <div class="card card-sm"><div class="card-icon">📋</div><div class="card-label">To confirm</div><div class="card-value" style="color:${pending.length>0?'var(--amber)':'var(--text)'}">${pending.length}</div><div class="card-sub">pending transactions</div></div>
+        <div class="card card-sm"><div class="card-icon">💎</div><div class="card-label">Block reward</div><div class="card-value">${D.mining_reward}</div><div class="card-sub">BP to miner</div></div>
+        <div class="card card-sm"><div class="card-icon">🔒</div><div class="card-label">Difficulty</div><div class="card-value">${D.difficulty}</div><div class="card-sub">zeros required</div></div>
+      </div>
+
+      <div style="max-width:480px">
+        <div class="form-group" style="margin-bottom:14px">
+          <label class="form-label">Miner wallet (receives ${D.mining_reward} BP reward + all fees)</label>
+          <select class="form-select" id="miner-sel">${minerOpts}</select>
+        </div>
+        <div class="mine-progress" id="mine-prog">
+          <div><span class="spinner">⟳</span> &nbsp;Mining in progress…</div>
+          <div id="mine-status-text" style="margin-top:4px">Searching for valid nonce…</div>
+          <div style="margin-top:4px;color:var(--text3);font-size:10px">Target: hash must start with ${'0'.repeat(D.difficulty)}</div>
+        </div>
+        <button class="btn btn-mine btn-full" id="mine-btn" onclick="doMine()" ${pending.length===0?'disabled':''}>
+          ${pending.length===0?'No pending transactions — send a payment first':'⛏ Mine Block #'+(D.length||1)}
+        </button>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Transactions to be included</div>
+        <div class="tx-list" style="margin-top:10px">${pendingRows}</div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Proof-of-Work explained</div>
+        <div class="card" style="font-size:12px;color:var(--text2);line-height:1.9;margin-top:10px">
+          <div>1. Take all block data (transactions, timestamp, previous hash)</div>
+          <div>2. Append a <strong style="color:var(--text)">nonce</strong> (a number we keep incrementing)</div>
+          <div>3. Compute <strong style="color:var(--accent)">SHA-256(block_data + nonce)</strong></div>
+          <div>4. If hash starts with <strong style="color:var(--green)">${'0'.repeat(D.difficulty)}</strong> → block is mined! 🎉</div>
+          <div>5. Otherwise nonce++ and try again — can take thousands of attempts</div>
+          <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);color:var(--text3)">Higher difficulty = more zeros needed = exponentially harder to mine</div>
+        </div>
+      </div>
+    </div>`;
+}
+
+async function doMine(){
+  if(isMining) return;
+  const miner = document.getElementById('miner-sel')?.value||'Alice';
+  isMining=true;
+  const btn = document.getElementById('mine-btn');
+  if(btn){btn.disabled=true; btn.textContent='⟳ Mining…';}
+  const prog = document.getElementById('mine-prog');
+  if(prog) prog.classList.add('show');
+
+  let dots=0;
+  const interval = setInterval(()=>{
+    dots++;
+    const s=document.getElementById('mine-status-text');
+    if(s) s.textContent='Searching for valid nonce'+'.'.repeat(dots%4)+' (this may take a moment)';
+  },600);
+
+  try {
+    const r = await req('/api/mine/','POST',{miner});
+    clearInterval(interval);
+    if(r.success){
+      toast('success',`Block #${r.block.index} mined! Nonce: ${r.block.nonce.toLocaleString()} · Reward: ${D.mining_reward} BP → ${miner}`);
+      isMining=false;
+      goto('explorer');
+    } else {
+      toast('error',r.error||'Mining failed');
+      isMining=false; render();
+    }
+  } catch(e){
+    clearInterval(interval);
+    toast('error','API error — check Django server');
+    isMining=false; render();
+  }
+}
+
+// ── EXPLORER ──────────────────────────────────────────────────────────────────────
+function renderExplorer(){
+  const chain = (D.chain||[]).slice().reverse();
+  const blocks = chain.map((block,i)=>{
+    const isG = block.index===0;
+    const txCount = (block.transactions||[]).length;
+    return `
+      <div class="block-wrap">
+        ${i>0?`<div class="chain-connector">│</div>`:''}
+        <div class="block-card" id="bcard-${block.index}">
+          <div class="block-head" onclick="toggleBlock(${block.index})">
+            <div class="block-num ${isG?'bn-genesis':'bn-normal'}">${block.index===0?'GEN':'#'+block.index}</div>
+            <div class="block-head-info">
+              <div class="block-head-title">${isG?'Genesis Block':'Block #'+block.index}</div>
+              <div class="block-head-hash">${block.hash}</div>
+            </div>
+            <div class="block-head-meta">
+              <div>${txCount} tx${txCount!==1?'s':''}</div>
+              <div>${tsToTime(block.timestamp)}</div>
+            </div>
+            <span class="block-chevron" id="bchev-${block.index}">▼</span>
+          </div>
+          <div class="block-body" id="bbody-${block.index}">
+            <div class="block-meta-grid">
+              <div><div class="bm-label">Nonce</div><div class="bm-val" style="font-family:var(--mono)">${(block.nonce||0).toLocaleString()}</div></div>
+              <div><div class="bm-label">Miner</div><div class="bm-val">${block.miner||'SYSTEM'}</div></div>
+              <div><div class="bm-label">Timestamp</div><div class="bm-val" style="font-size:11px;font-family:var(--mono)">${tsToFull(block.timestamp)}</div></div>
+              <div><div class="bm-label">Transactions</div><div class="bm-val">${txCount}</div></div>
+            </div>
+            <div class="bm-label">Block hash <span style="color:var(--green);font-size:9px">(starts with ${'0'.repeat(D.difficulty||2)})</span></div>
+            <div class="hash-box valid" style="margin-top:5px">${block.hash}</div>
+            <div class="bm-label">Previous hash</div>
+            <div class="hash-box" style="margin-top:5px">${block.previous_hash}</div>
+            <div class="bm-label" style="margin-top:8px;margin-bottom:8px">Transactions</div>
+            ${(block.transactions||[]).map(tx=>`
+              <div class="tx-row confirmed" style="margin-bottom:5px">
+                <div class="wallet-av ${avClass(tx.sender)}" style="width:22px;height:22px;font-size:9px">${tx.sender[0]}</div>
+                <span class="tx-name">${tx.sender}</span>
+                <span class="tx-arrow">──▶</span>
+                <span class="tx-name">${tx.recipient}</span>
+                <span style="margin-left:auto"></span>
+                <span class="tx-amt" style="color:var(--green)">+${tx.amount} BP</span>
+                <span class="tx-id">${tx.tx_id}</span>
+              </div>`).join('')}
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  return `
+    <div class="topbar">
+      <div><div class="page-title">Chain Explorer</div><div class="page-sub">${D.length} blocks — click a block to expand its contents</div></div>
+      <span class="chip chip-blue">⛓ ${D.length} blocks</span>
+    </div>
+    <div class="page-body">${blocks}</div>`;
+}
+
+function toggleBlock(idx){
+  const body = document.getElementById('bbody-'+idx);
+  const card = document.getElementById('bcard-'+idx);
+  const chev = document.getElementById('bchev-'+idx);
+  if(!body) return;
+  const open = body.classList.toggle('open');
+  if(card) card.classList.toggle('expanded', open);
+  if(chev) chev.textContent = open ? '▲' : '▼';
+}
+
+// ── VALIDATE ──────────────────────────────────────────────────────────────────────
+function renderValidate(){
+  return `
+    <div class="topbar">
+      <div><div class="page-title">Validate Chain</div><div class="page-sub">Re-compute all SHA-256 hashes and check hash links</div></div>
+    </div>
+    <div class="page-body" style="max-width:520px">
+      <div class="card" style="margin-bottom:16px">
+        <div style="font-size:13px;color:var(--text2);line-height:1.8;margin-bottom:16px">
+          The validator walks every block in the chain and:<br>
+          <span style="color:var(--text3)">① </span>Re-computes each block's SHA-256 hash from scratch<br>
+          <span style="color:var(--text3)">② </span>Checks it matches the stored <code style="font-family:var(--mono);color:var(--accent)">hash</code> field<br>
+          <span style="color:var(--text3)">③ </span>Checks each block's <code style="font-family:var(--mono);color:var(--accent)">previous_hash</code> matches the prior block<br>
+          If any mismatch is found, the chain has been tampered with.
+        </div>
+        <button class="btn btn-primary btn-full" onclick="doValidate()">✓ Run validation</button>
+      </div>
+      <div id="validate-out"></div>
+    </div>`;
+}
+
+async function doValidate(){
+  const out = document.getElementById('validate-out');
+  out.innerHTML = `<div class="card" style="text-align:center;color:var(--text3)"><span class="spinner">⟳</span> Validating ${D.length} blocks…</div>`;
+  try {
+    const r = await req('/api/validate/');
+    out.innerHTML = `
+      <div class="validate-result ${r.is_valid?'vr-valid':'vr-invalid'}">
+        <div class="vr-icon">${r.is_valid?'✅':'❌'}</div>
+        <div class="vr-title" style="color:${r.is_valid?'var(--green)':'var(--red)'}">${r.message}</div>
+        <div class="vr-sub">${r.chain_length} blocks checked · Difficulty: ${D.difficulty} zeros</div>
+      </div>`;
+  } catch(e){ toast('error','API error'); }
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────────────
+(async()=>{
+  await refresh();
+  document.getElementById('nav-dashboard').classList.add('active');
+  render();
+})();
+</script>
+</body>
+</html>
